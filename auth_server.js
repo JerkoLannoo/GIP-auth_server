@@ -29,7 +29,7 @@ setInterval(() => {
 }, 3600000);
 app.post("/authenticate", function(req,res){
     let datum = new Date().getTime()
-    con.query("SELECT * FROM beurten WHERE username="+JSON.stringify(req.body.username)+" AND (password=SHA2("+JSON.stringify(req.body.password)+",512) OR password="+JSON.stringify(req.body.password)+") AND devices>0 AND activeDate<="+datum+";", function(err,result){
+    con.query("SELECT * FROM beurten WHERE username="+JSON.stringify(req.body.username)+" AND (password=SHA2("+JSON.stringify(req.body.password)+",512) OR password="+JSON.stringify(req.body.password)+") AND devices<used AND activeDate<="+datum+";", function(err,result){
         if(err){
             console.log(err)
             res.sendStatus(400)
@@ -41,14 +41,14 @@ app.post("/authenticate", function(req,res){
 app.post("/authorize", function(req,res){
     let datum = new Date().getTime()
     console.log(datum)
-    con.query("SELECT * FROM beurten WHERE username="+JSON.stringify(req.body.username)+" AND (password=SHA2("+JSON.stringify(req.body.password)+",512) OR password="+JSON.stringify(req.body.password)+") AND devices>0 AND activeDate<="+datum+";", function(err,result){
+    con.query("SELECT * FROM beurten WHERE username="+JSON.stringify(req.body.username)+" AND (password=SHA2("+JSON.stringify(req.body.password)+",512) OR password="+JSON.stringify(req.body.password)+") AND devices<used AND activeDate<="+datum+";", function(err,result){
         if(err){
             console.log(err)
             res.sendStatus(400)
         }
         else if(result.length) {
             var duratief = result[0].time
-            con.query("UPDATE beurten SET devices=devices-1, loginDate="+datum+" WHERE username="+JSON.stringify(req.body.username)+" AND (password=SHA2("+JSON.stringify(req.body.password)+",512) OR password="+JSON.stringify(req.body.password)+") AND devices>0 AND activeDate<="+datum+";", function(err,result){
+            con.query("UPDATE beurten SET used=used+1, loginDate="+datum+" WHERE username="+JSON.stringify(req.body.username)+" AND (password=SHA2("+JSON.stringify(req.body.password)+",512) OR password="+JSON.stringify(req.body.password)+") AND devices>0 AND activeDate<="+datum+";", function(err,result){
                 if(err){
                     console.log(err)
                     res.send(400)
