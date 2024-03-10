@@ -9,6 +9,13 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: true
 }));
+var pfcon = mysql.createConnection({
+    host: "192.168.100.2",
+    user: "pf",
+    password: "ARF843U425>D<>[a",
+    database:"pf",
+    multipleStatements:true
+  });
 var con = mysql.createConnection({
     host: "localhost",
     user: "root",
@@ -29,33 +36,50 @@ setInterval(() => {
 }, 3600000);
 app.post("/authenticate", function(req,res){
    // console.log(req.body)
-    let datum = new Date().getTime()
-    con.query("SELECT * FROM beurten WHERE username="+JSON.stringify(req.body.username)+" AND (password=SHA2("+JSON.stringify(req.body.password)+",512) OR password="+JSON.stringify(req.body.password)+") AND devices>used AND activeDate<="+datum+";", function(err,result){
-        if(err){
-            console.log(err)
-            res.sendStatus(400)
-        }
-        else if(result.length) {
-            con.query("UPDATE beurten SET used=used+1, loginDate="+datum+" WHERE username="+JSON.stringify(req.body.username)+" AND (password=SHA2("+JSON.stringify(req.body.password)+",512) OR password="+JSON.stringify(req.body.password)+") AND devices>used AND activeDate<="+datum+";", function(err,result){
-                if(err){
-                    console.log(err)
-                    res.send(400)
-                }
-                else {
-                    console.log("ok")
-                    res.send({result:1, message:"OK"})
-                } 
-            })
-        } 
-        else res.send({result:0, message:"Verkeerde gebruikersnaam of wachtwoord."})
+let datum = new Date().getTime()
+return new Promise((resolve, reject)=>{
+        con.query("SELECT * FROM beurten WHERE username="+JSON.stringify(req.body.username)+" AND (password=SHA2("+JSON.stringify(req.body.password)+",512) OR password="+JSON.stringify(req.body.password)+") AND devices>used AND activeDate<="+datum+"; SELECT * FROM settings;",[1,2], function(err,result){
+            if(err){
+                console.log(err)
+                reject("Er ging iets mis.")
+            }
+            else if(!result[0].length) reject("Verkeerde gebruikersnaam of wachtwoord.")
+            else if(result[1].length) {
+                console.log(result[1])
+                var users = result[1][0]
+                pfcon.query("SELECT status FROM node WHERE status='reg'", function(err, result){
+                    if(err){
+                        console.log(err)
+                        reject("Er ging iets mis.")
+                    }
+                    else if(result.length){
+                        console.log("registered devices: "+result.length+", max users: "+users)
+                       if(users.max_users>result.length&&users.allow_logins) resolve(result)
+                       else if(!users.allow_logins) reject("Je kan je momenteel niet inloggen.")
+                       else reject("Het netwerk is volzet.")
+                    }
+                    else reject("Er ging iets mis.")
+                })
+            } 
+        })
+    }).then(value=>{
+        con.query("UPDATE beurten SET used=used+1, loginDate="+datum+" WHERE username="+JSON.stringify(req.body.username)+" AND (password=SHA2("+JSON.stringify(req.body.password)+",512) OR password="+JSON.stringify(req.body.password)+") AND devices>used AND activeDate<="+datum+" LIMIT 1;", function(err,result){//LIMIT 1 neemt alleen de eerste rij
+            if(err){
+                console.log(err)
+                reject("Er ging iets mis.")
+            }
+            else {
+                console.log("ok")
+                res.send({result:1, message:"OK"})
+            } 
+        })
+    }).catch(err=>{
+        res.send({result:0, message:err})
     })
 })
 app.post("/authorize", function(req,res){
     let datum = new Date().getTime()
-    console.log(req.body)
-    console.log(datum)
     con.query("SELECT * FROM beurten WHERE username="+JSON.stringify(req.body.username)+"  AND activeDate<="+datum+";", function(err,result){
-        console.log(result)
         if(err){
             console.log(err)
             res.sendStatus(400)
