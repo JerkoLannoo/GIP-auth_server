@@ -53,11 +53,12 @@ return new Promise((resolve, reject)=>{
                         reject("Er ging iets mis.")
                     }
                     else if(result.length){
-                        console.log("registered devices: "+result.length+", max users: "+users)
+                       console.log("registered devices: "+result.length+", max users: "+users)
                        if(users.max_users>result.length&&users.allow_logins) resolve(result)
                        else if(!users.allow_logins) reject("Je kan je momenteel niet inloggen.")
                        else reject("Het netwerk is volzet.")
                     }
+                    else if(!result.length) resolve(0)
                     else reject("Er ging iets mis.")
                 })
             } 
