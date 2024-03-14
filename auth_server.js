@@ -38,7 +38,7 @@ app.post("/authenticate", function(req,res){
    // console.log(req.body)
 let datum = new Date().getTime()
 return new Promise((resolve, reject)=>{
-        con.query("SELECT * FROM beurten WHERE username="+JSON.stringify(req.body.username)+" AND (password=SHA2("+JSON.stringify(req.body.password)+",512) OR password="+JSON.stringify(req.body.password)+") AND devices>used AND activeDate<="+datum+"; SELECT * FROM settings;",[1,2], function(err,result){
+        con.query("SELECT * FROM beurten WHERE username="+JSON.stringify(req.body.username)+" AND (password=SHA2("+JSON.stringify(req.body.password)+",512) OR password="+JSON.stringify(req.body.password)+") AND devices>used AND activeDate<="+datum+"; SELECT * FROM settings; SELECT * FROM blacklist;",[1,2,3], function(err,result){
             if(err){
                 console.log(err)
                 reject("Er ging iets mis.")
@@ -46,7 +46,9 @@ return new Promise((resolve, reject)=>{
             else if(!result[0].length) reject("Verkeerde gebruikersnaam of wachtwoord.")
             else if(result[1].length) {
                 console.log(result[1])
+                var beurten = result[0]
                 var users = result[1][0]
+                var ban = result[2]
                 pfcon.query("SELECT status FROM node WHERE status='reg'", function(err, result){
                     if(err){
                         console.log(err)
@@ -54,7 +56,8 @@ return new Promise((resolve, reject)=>{
                     }
                     else if(result.length){
                        console.log("registered devices: "+result.length+", max users: "+users)
-                       if(users.max_users>result.length&&users.allow_logins) resolve(result)
+                       if(users.max_users>result.length&&users.allow_logins&&ban.filter(e => e.email === beurten[0].email).length==0) resolve(result)
+                       else if(ban.filter(e => e.email === beurten[0].email).length>0) reject("Je bent verbannen.")
                        else if(!users.allow_logins) reject("Je kan je momenteel niet inloggen.")
                        else reject("Het netwerk is volzet.")
                     }
