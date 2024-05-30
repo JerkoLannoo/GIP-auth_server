@@ -95,6 +95,10 @@ return new Promise((resolve, reject)=>{
 })
 app.post("/authorize", function(req,res){
     let datum = new Date().getTime()
+    let unregdate = new Date().getTime()
+    unregdate += 1000*60*60*24*365*10//10 jaar vanaf nu
+    unregdate = new Date(unregdate)
+    console.log("datum: "+unregdate)
     con.query("SELECT * FROM beurten WHERE username="+JSON.stringify(req.body.username)+"  AND activeDate<="+datum+";", function(err,result){
         if(err){
             console.log(err)
@@ -103,14 +107,14 @@ app.post("/authorize", function(req,res){
         else if(result.length) {
             var duratief = result[0].time
             console.log("found, duration: "+duratief+" OR data: "+result[0].data)
-            if(result[0].adblock&&result[0].data==5) res.send({"access_level":"ALL","sponsor":0,"unregdate":"2030-01-01","category":"lln_5GB_adblock", "time_balance:": "100s"})//time balance is niet gedocumenteerd
-            else if(result[0].adblock&&result[0].data==10) res.send({"access_level":"ALL","sponsor":0,"unregdate":"2030-01-01","category":"lln_10GB_adblock", "time_balance:": "100s"})
-            else if(result[0].adblock&&result[0].data==15) res.send({"access_level":"ALL","sponsor":0,"unregdate":"2030-01-01","category":"lln_15GB_adblock", "time_balance:": "100s"})
-            else if(result[0].data==5) res.send({"access_level":"ALL","sponsor":0,"unregdate":"2030-01-01","category":"lln_5GB", "time_balance:": "100s"})
-            else if(result[0].data==15) res.send({"access_level":"ALL","sponsor":0,"unregdate":"2030-01-01","category":"lln_10GB", "time_balance:": "100s"})
-            else if(result[0].data==10) res.send({"access_level":"ALL","sponsor":0,"unregdate":"2030-01-01","category":"lln_15GB", "time_balance:": "100s"})
-            else if(result[0].adblock) res.send({"access_level":"ALL","sponsor":0,"unregdate":"2030-01-01","category":"lln_adblock", "time_balance:": "100s"})
-            else res.send({"access_level":"ALL","sponsor":0,"unregdate":"2030-01-01","category":"lln", "time_balance:": "100s"})
+            if(result[0].adblock&&result[0].data==5) res.send({"access_level":"ALL","sponsor":0,"unregdate":unregdate,"category":"lln_5GB_adblock", "time_balance:": "100s"})//time balance is niet gedocumenteerd
+            else if(result[0].adblock&&result[0].data==10) res.send({"access_level":"ALL","sponsor":0,"unregdate":unregdate,"category":"lln_10GB_adblock", "time_balance:": "100s"})
+            else if(result[0].adblock&&result[0].data==15) res.send({"access_level":"ALL","sponsor":0,"unregdate":unregdate,"category":"lln_15GB_adblock", "time_balance:": "100s"})
+            else if(result[0].data==5) res.send({"access_level":"ALL","sponsor":0,"unregdate":unregdate,"category":"lln_5GB", "time_balance:": "100s"})
+            else if(result[0].data==15) res.send({"access_level":"ALL","sponsor":0,"unregdate":unregdate,"category":"lln_10GB", "time_balance:": "100s"})
+            else if(result[0].data==10) res.send({"access_level":"ALL","sponsor":0,"unregdate":unregdate,"category":"lln_15GB", "time_balance:": "100s"})
+            else if(result[0].adblock) res.send({"access_level":"ALL","sponsor":0,"unregdate":unregdate,"category":"lln_adblock", "time_balance:": "100s"})
+            else res.send({"access_level":"ALL","sponsor":0,"unregdate":unregdate,"category":"lln", "time_balance:": "100s"})
             setTimeout(() => {
                 if(result[0].data!=null){
                     setData(req.body.mac, result[0].data, function(success){
